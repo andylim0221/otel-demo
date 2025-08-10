@@ -23,6 +23,7 @@ Make sure the following tools are installed locally:
 1. Docker
 2. Docker Compose
 3. Make
+4. AWS CLI with credentials configured (We will use a local credentials to list S3 buckets)
 
 ### Launch
 

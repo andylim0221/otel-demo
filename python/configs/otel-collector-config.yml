@@ -9,9 +9,13 @@ exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
   otlp:
-      endpoint: jaeger:4317
+      endpoint: tempo:4317
       tls:
         insecure: true
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    tls:
+      insecure: true
 
 extensions:
   health_check:
@@ -30,3 +34,7 @@ service:
       receivers: [otlp]
       processors: []
       exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: []
+      exporters: [loki]

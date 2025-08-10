@@ -2,6 +2,8 @@ from opentelemetry import trace
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry import metrics
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from flask import Flask
 import boto3
@@ -24,13 +26,24 @@ from opentelemetry.instrumentation.requests import RequestsInstrumentor
 app = Flask(__name__)
 
 # Set up OpenTelemetry
-resource = Resource.create({"service.name": "auto-instrumentation-demo"})
+resource = Resource.create({"service.name": "manual-instrumentation"})
+
+# Set up the tracer provider with the resource
 trace_provider = TracerProvider(resource=resource)
+metric_provider = MeterProvider(resource=resource)
 processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")))
 trace_provider.add_span_processor(processor)
+metrics.set_meter_provider(metric_provider)
 trace.set_tracer_provider(trace_provider)
 
 tracer = trace.get_tracer(__name__)
+metric = metrics.get_meter(__name__)
+
+aws_sdk_call_with_instrumentation_count = metric.create_counter(
+    "aws_sdk_call_with_instrumentation_count",
+    unit="0",
+    description="Count of AWS SDK calls with instrumentation",
+)
 
 def setup_instrumentation():
     # Auto-instrument Botocore for AWS SDK
@@ -74,6 +87,10 @@ def aws_sdk_call_with_instrumentation():
 
         s3 = boto3.client('s3')
         response = s3.list_buckets()
+
+        # Increment the count of AWS SDK calls with instrumentation
+        aws_sdk_call_with_instrumentation_count.add(1)
+        print("AWS SDK call with instrumentation count incremented")
         
         return {
             "message": "Listed S3 buckets successfully",
@@ -82,6 +99,7 @@ def aws_sdk_call_with_instrumentation():
                 int(span.get_span_context().trace_id)
             ) + testingId
         }
+    
 
 
 # Define a simple root endpoint
