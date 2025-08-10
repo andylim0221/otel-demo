@@ -4,15 +4,20 @@ receivers:
     protocols:
       grpc:
         endpoint: "0.0.0.0:4317"
+
+
+processors:
+  batch: 
+
 # Exporter is the component that exports telemetry data to a backend.
 exporters:
   prometheus:
     endpoint: "0.0.0.0:8889"
-  otlp:
-      endpoint: tempo:4317
+  otlphttp:
+      endpoint: http://tempo:4418
       tls:
         insecure: true
-  loki:
+  otlphttp/loki:
     endpoint: http://loki:3100/loki/api/v1/push
     tls:
       insecure: true
@@ -28,13 +33,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: []
-      exporters: [otlp]
+      processors: [batch]
+      exporters: [otlphttp]
     metrics:
       receivers: [otlp]
-      processors: []
+      processors: [batch]
       exporters: [prometheus]
     logs:
       receivers: [otlp]
-      processors: []
-      exporters: [loki]
+      processors: [batch]
+      exporters: [otlphttp/loki]

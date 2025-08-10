@@ -1,0 +1,63 @@
+stream_over_http_enabled: true
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9096
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4417"
+        http:
+          endpoint: "0.0.0.0:4418"
+
+ingester:
+  trace_idle_period: 1s
+  max_block_duration: 1s
+  flush_check_period: 1s
+  lifecycler:
+    address: 0.0.0.0
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+    min_ready_duration: 1s
+
+query_frontend:
+  search:
+    duration_slo: 5s
+  trace_by_id:
+    duration_slo: 5s
+
+querier:
+  frontend_worker:
+    frontend_address: 0.0.0.0:9096
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /var/tempo/wal
+    local:
+      path: /var/tempo/blocks
+
+metrics_generator:
+  processor:
+    local_blocks:
+      filter_server_spans: false
+    span_metrics:
+      dimensions:
+        - service_name
+        - operation
+        - status_code
+  traces_storage:
+    path: /var/tempo/generator/traces
+  storage:
+    path: /var/tempo/generator/wal
+    remote_write:
+      - url: http://127.0.0.1:9090/api/v1/write
+        send_exemplars: true
+
+overrides:
+  metrics_generator_processors: [service-graphs, local-blocks, span-metrics]

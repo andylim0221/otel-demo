@@ -127,3 +127,5 @@ celerybeat.pid
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+tempo-data/
