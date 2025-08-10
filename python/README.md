@@ -15,6 +15,23 @@ Component | Description
 **Tempo** | Used to receive and store traces
 **Prometheus** | Used to receive and store metrics
 
+## Setup and Launch
+
+### Prerequisite
+
+Make sure the following tools are installed locally:
+1. Docker
+2. Docker Compose
+3. Make
+
+### Launch
+
+To launch the application and LGTP stack, simply run:
+
+```
+make run-manual
+```
+
 ## How It Works
 
 1. Application is instrumented to use OTEL SDK, API and exporter to send traces, logs and metrics to the OTEL collector via OLTP (OpenTelemtry Protocol) at port 4317.
@@ -28,3 +45,9 @@ Component | Description
     - Queries Prometheus for metrics dashboards
     - Queries Tempo for trace visualization
     - Queries Loki for log exploration 
+
+### Clean Up
+
+```
+make clean-manual
+```
