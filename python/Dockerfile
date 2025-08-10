@@ -8,6 +8,6 @@ RUN pip install --upgrade pip
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 3001
+EXPOSE 5000
 
-ENTRYPOINT ["python", "src/manual-instrumentation.py"]
+ENTRYPOINT ["python", "manual-instrumentation.py"]

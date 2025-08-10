@@ -3,20 +3,29 @@ receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: 0.0.0.0:5000
-# Processor is the component that processes the telemetry data.
-processors:
+        endpoint: "0.0.0.0:4317"
 # Exporter is the component that exports telemetry data to a backend.
 exporters:
   prometheus:
-    endpoint: 0.0.0.0:9090
+    endpoint: "0.0.0.0:8889"
+  otlp:
+      endpoint: jaeger:4317
+      tls:
+        insecure: true
+
+extensions:
+  health_check:
+  pprof:
+  zpages:
+
 # Service is the component that defines the pipeline of telemetry data. This is required to connect the receivers, processors, and exporters.
 service:
+  extensions: [health_check, pprof, zpages]
   pipelines:
     traces:
       receivers: [otlp]
       processors: []
-      exporters: [prometheus]
+      exporters: [otlp]
     metrics:
       receivers: [otlp]
       processors: []
