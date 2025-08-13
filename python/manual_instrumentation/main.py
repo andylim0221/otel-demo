@@ -1,25 +1,22 @@
-from opentelemetry import trace, metrics
 from opentelemetry.sdk.resources import Resource
 
 # Import Traces
+from opentelemetry import trace
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 # Import Metrics
+from opentelemetry import metrics
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import (
-    ConsoleMetricExporter,
-    PeriodicExportingMetricReader,
-)
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 
 # Import Logs
 from opentelemetry._logs import set_logger_provider, get_logger
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
-
-# Import Span Exporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
 # Instrumentation libraries
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
@@ -44,23 +41,20 @@ resource = Resource.create({"service.name": "manual-instrumentation-demo"})
 trace_provider = TracerProvider(resource=resource)
 processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otel_endpoint))
 trace_provider.add_span_processor(processor)
+trace.set_tracer_provider(trace_provider)
+tracer = trace.get_tracer(__name__)
 
 # Set up the metric reader and exporter
-metric_reader = PeriodicExportingMetricReader(ConsoleMetricExporter())
+metric_reader = PeriodicExportingMetricReader(OTLPMetricExporter(endpoint=otel_endpoint), export_interval_millis=1000)
 metric_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+metrics.set_meter_provider(metric_provider)
+metric = metrics.get_meter(__name__)
 
 # Set up the logger provider
 logger_provider = LoggerProvider(resource=resource)
 set_logger_provider(logger_provider)
-
 exporter = OTLPLogExporter(endpoint=otel_endpoint, insecure=True)
 logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
-
-metrics.set_meter_provider(metric_provider)
-trace.set_tracer_provider(trace_provider)
-
-tracer = trace.get_tracer(__name__)
-metric = metrics.get_meter(__name__)
 logger = get_logger("s3_bucket_logger")
 
 handler = LoggingHandler(level=logging.DEBUG,logger_provider=logger_provider)
@@ -171,7 +165,6 @@ def aws_sdk_call_manual_instrumentation():
             main_span.record_exception(e)
             main_span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
             aws_sdk_call_manual_instrumentation_count.add(1, {"operation": "list_buckets", "status": "error"})
-            s3_bucket_logger.error(f"Error during AWS SDK call: {str(e)}")
             return {
                 "error": str(e),
                 "message": "Failed to list S3 buckets"

@@ -2,3 +2,5 @@ Dockerfile
 docker-compose*.yml
 *.png
 Makefile
+env
+__pycache__

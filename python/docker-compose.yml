@@ -15,7 +15,6 @@ services:
   flask-app-auto-instrumentation:
     build:
       context: ./auto_instrumentation
-      dockerfile: Dockerfile
     container_name: flask-app-auto-instrumentation
     restart: unless-stopped
     hostname: flask-app
@@ -25,15 +24,16 @@ services:
       - '5000:5000'
     environment:
       - FLASK_ENV=development
-      - FLASK_APP=main.py
       - PORT=5000
-      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+      - FLASK_APP=main.py
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_METRICS_EXPORTER=console, otlp
-      - OTEL_TRACES_EXPORTER=console,otlp
-      - OTEL_LOGS_EXPORTER=otlp
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_METRICS_EXPORTER=otlp
+      - OTEL_TRACES_EXPORTER=otlp,console
+      - OTEL_LOGS_EXPORTER=otlp,console
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
       - OTEL_SERVICE_NAME=flask-app-auto-instrumentation
-      - OTEL_SERVICE_VERSION=1.0.0'
+      - OTEL_SERVICE_VERSION=1.0.0
     volumes:
       - $HOME/.aws/:/root/.aws/:ro
     depends_on:
@@ -42,7 +42,6 @@ services:
   flask-app-manual-instrumentation:
     build:
       context: ./manual_instrumentation
-      dockerfile: Dockerfile
     container_name: flask-app-manual-instrumentation
     restart: unless-stopped
     hostname: flask-app
@@ -55,7 +54,7 @@ services:
       - FLASK_APP=main.py
       - PORT=5003
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_METRICS_EXPORTER=console, otlp
+      - OTEL_METRICS_EXPORTER=console,otlp
       - OTEL_TRACES_EXPORTER=console,otlp
       - OTEL_LOGS_EXPORTER=otlp
       - OTEL_SERVICE_NAME=flask-app-manual-instrumentation
