@@ -33,6 +33,16 @@ To launch the application and LGTP stack, simply run:
 make run-all
 ```
 
+### Test
+
+Run test call
+
+```
+cd ..
+chmod +x make_http_call.sh
+./make_http_call.sh
+```
+
 ## How It Works
 
 1. Application is instrumented to use OTEL SDK, API and exporter to send traces, logs and metrics to the OTEL collector via OLTP (OpenTelemtry Protocol) at port 4317.
