@@ -5,7 +5,6 @@ receivers:
       grpc:
         endpoint: "0.0.0.0:4317"
 
-
 processors:
   batch: 
 
@@ -45,3 +44,11 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [debug, otlphttp/logs]
+  telemetry:
+    metrics:
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: '0.0.0.0'
+                port: 8888

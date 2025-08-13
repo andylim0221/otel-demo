@@ -1,4 +1,4 @@
-from opentelemetry import trace, metrics, _logs
+from opentelemetry import trace, metrics
 from opentelemetry.sdk.resources import Resource
 
 # Import Traces
@@ -7,6 +7,10 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 # Import Metrics
 from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import (
+    ConsoleMetricExporter,
+    PeriodicExportingMetricReader,
+)
 
 # Import Logs
 from opentelemetry._logs import set_logger_provider, get_logger
@@ -34,26 +38,30 @@ otel_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "localhost:4317")
 port = os.environ.get("PORT", "5000")
 
 # Set up OpenTelemetry
-resource = Resource.create({"service.name": "instrumentation-demo"})
+resource = Resource.create({"service.name": "manual-instrumentation-demo"})
 
 # Set up the tracer provider with the resource
 trace_provider = TracerProvider(resource=resource)
-metric_provider = MeterProvider(resource=resource)
 processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otel_endpoint))
 trace_provider.add_span_processor(processor)
 
+# Set up the metric reader and exporter
+metric_reader = PeriodicExportingMetricReader(ConsoleMetricExporter())
+metric_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+
 # Set up the logger provider
 logger_provider = LoggerProvider(resource=resource)
+set_logger_provider(logger_provider)
+
 exporter = OTLPLogExporter(endpoint=otel_endpoint, insecure=True)
 logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
-set_logger_provider(logger_provider)
-s3_bucket_logger = get_logger("s3_bucket_logger")
 
 metrics.set_meter_provider(metric_provider)
 trace.set_tracer_provider(trace_provider)
 
 tracer = trace.get_tracer(__name__)
 metric = metrics.get_meter(__name__)
+logger = get_logger("s3_bucket_logger")
 
 handler = LoggingHandler(level=logging.DEBUG,logger_provider=logger_provider)
 
@@ -72,18 +80,6 @@ def setup_instrumentation():
     BotocoreInstrumentor().instrument()
     FlaskInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()
-
-# Without instrumentation, the app would not have tracing
-@app.route("/aws-sdk-call-auto-instrumentation")
-def aws_sdk_call_with_auto_instrumentation():
-    # Example Boto3 call to list S3 buckets
-    s3 = boto3.client('s3')
-    response = s3.list_buckets()
-    return {
-        "message": "Listed S3 buckets successfully",
-        "buckets": [bucket['Name'] for bucket in response['Buckets']]
-    }
-   
 
 # With instrumentation, the app will have tracing
 @app.route("/aws-sdk-call-manual-instrumentation")
@@ -180,11 +176,6 @@ def aws_sdk_call_manual_instrumentation():
                 "error": str(e),
                 "message": "Failed to list S3 buckets"
             }
-
-# Define a simple root endpoint
-@app.route("/")
-def root_endpoint():
-    return "OK"
 
 if __name__ == "__main__":
     setup_instrumentation()
