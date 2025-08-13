@@ -8,6 +8,8 @@ RUN pip install --upgrade pip
 
 RUN pip install --no-cache-dir -r requirements.txt
 
+RUN opentelemetry-bootstrap -a install
+
 EXPOSE 5000
 
-ENTRYPOINT ["python", "manual-instrumentation.py"]
+ENTRYPOINT ["opentelemetry-instrument", "python", "main.py"]

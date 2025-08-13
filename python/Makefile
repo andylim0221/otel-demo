@@ -2,10 +2,11 @@
 
 run-all:
 	@echo "Running instrumentation demo..."
-	docker-compose -f docker-compose-manual.yml up --build -d
+	docker-compose -f docker-compose.yml up --build -d
 	docker ps
-	@echo "instrumentation demo is running. Access it at http://localhost:5000/aws-sdk-call-with-instrumentation"
+	@echo "Autoinstrumentation demo is running. Access it at http://localhost:5000/aws-sdk-call-auto-instrumentation"
+	@echo "Manual instrumentation demo is running. Access it at http://localhost:5000/aws-sdk-call-manual-instrumentation"
 
 clean-all:
 	@echo "Cleaning up instrumentation demo..."
-	docker-compose -f docker-compose-manual.yml down --remove-orphans
+	docker-compose -f docker-compose.yml down --remove-orphans

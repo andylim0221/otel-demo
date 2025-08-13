@@ -11,44 +11,27 @@ services:
       - "/var/tempo"
     volumes:
       - ./tempo-data:/var/tempo
-  
-  flask-app-manual-instrumentation:
+
+  flask-app:
     build:
       context: .
-      dockerfile: Dockerfile-manual
-    container_name: flask-app-manual-instrumentation
+      dockerfile: Dockerfile
+    container_name: flask-app
     restart: unless-stopped
-    hostname: flask-app-manual-instrumentation
+    hostname: flask-app
     networks:
       - otel-network
     ports:
       - '5000:5000'
     environment:
       - FLASK_ENV=development
-      - FLASK_APP=app.py
+      - FLASK_APP=main.py
+      - PORT=5000
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
-      - OTEL_SERVICE_NAME=flask-app
-      - OTEL_SERVICE_VERSION=1.0.0'
-    volumes:
-      - $HOME/.aws/:/root/.aws/:ro
-    depends_on:
-      - otel-collector 
-
-  flask-app-auto-instrumentation:
-    build:
-      context: .
-      dockerfile: Dockerfile-auto
-    container_name: flask-app-auto-instrumentation
-    restart: unless-stopped
-    hostname: flask-app-auto-instrumentation
-    networks:
-      - otel-network
-    ports:
-      - '5001:5001'
-    environment:
-      - FLASK_ENV=development
-      - FLASK_APP=app.py
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_METRICS_EXPORTER=console, otlp
+      - OTEL_TRACES_EXPORTER=console,otlp
+      - OTEL_LOGS_EXPORTER=console,otlp
       - OTEL_SERVICE_NAME=flask-app
       - OTEL_SERVICE_VERSION=1.0.0'
     volumes:
