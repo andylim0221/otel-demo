@@ -55,9 +55,12 @@ logger_provider = LoggerProvider(resource=resource)
 set_logger_provider(logger_provider)
 exporter = OTLPLogExporter(endpoint=otel_endpoint, insecure=True)
 logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
-logger = get_logger("s3_bucket_logger")
+handler = LoggingHandler(level=logging.NOTSET,logger_provider=logger_provider)
 
-handler = LoggingHandler(level=logging.DEBUG,logger_provider=logger_provider)
+logging.getLogger().setLevel(logging.NOTSET)
+logging.getLogger().addHandler(handler)
+
+s3_logger = logging.getLogger("boto3.resources.factory") 
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -83,7 +86,7 @@ def aws_sdk_call_manual_instrumentation():
     current_span = trace.get_current_span()
     parent_context = current_span.get_span_context()
 
-    logging.info(f"Starting manual instrumentation for AWS SDK call Parent span: {parent_context.span_id}")
+    s3_logger.info(f"Starting manual instrumentation for AWS SDK call Parent span: {parent_context.span_id}")
 
     # Main operation span
     with tracer.start_as_current_span("aws_s3_list_operation") as main_span:
@@ -164,6 +167,7 @@ def aws_sdk_call_manual_instrumentation():
         except Exception as e:
             main_span.record_exception(e)
             main_span.set_status(trace.Status(trace.StatusCode.ERROR, str(e)))
+            s3_logger.error(f"Error listing S3 buckets: {str(e)}")
             aws_sdk_call_manual_instrumentation_count.add(1, {"operation": "list_buckets", "status": "error"})
             return {
                 "error": str(e),
