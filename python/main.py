@@ -17,13 +17,6 @@ from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
 # Import Span Exporter
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
-# Propogators
-from opentelemetry.propagators.aws.aws_xray_propagator import (
-    TRACE_ID_DELIMITER,
-    TRACE_ID_FIRST_PART_LENGTH,
-    TRACE_ID_VERSION,
-)
-
 # Instrumentation libraries
 from opentelemetry.instrumentation.flask import FlaskInstrumentor
 from opentelemetry.instrumentation.botocore import BotocoreInstrumentor
@@ -79,21 +72,6 @@ def setup_instrumentation():
     BotocoreInstrumentor().instrument()
     FlaskInstrumentor().instrument_app(app)
     RequestsInstrumentor().instrument()
-
-def convert_otel_trace_id_to_xray(otel_trace_id_decimal):
-    otel_trace_id_hex = "{:032x}".format(otel_trace_id_decimal)
-    x_ray_trace_id = TRACE_ID_DELIMITER.join(
-        [
-            TRACE_ID_VERSION,
-            otel_trace_id_hex[:TRACE_ID_FIRST_PART_LENGTH],
-            otel_trace_id_hex[TRACE_ID_FIRST_PART_LENGTH:],
-        ]
-    )
-    return '{{"traceId": "{}"}}'.format(x_ray_trace_id)
-
-testingId = ""
-if (os.environ.get("INSTANCE_ID")):
-            testingId = "_" + os.environ["INSTANCE_ID"]
 
 # Without instrumentation, the app would not have tracing
 @app.route("/aws-sdk-call-auto-instrumentation")
@@ -202,8 +180,6 @@ def aws_sdk_call_manual_instrumentation():
                 "error": str(e),
                 "message": "Failed to list S3 buckets"
             }
-    
-
 
 # Define a simple root endpoint
 @app.route("/")
