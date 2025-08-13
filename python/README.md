@@ -30,7 +30,7 @@ Make sure the following tools are installed locally:
 To launch the application and LGTP stack, simply run:
 
 ```
-make run-manual
+make run-all
 ```
 
 ## How It Works
@@ -50,5 +50,5 @@ make run-manual
 ### Clean Up
 
 ```
-make clean-manual
+make clean-all
 ```
